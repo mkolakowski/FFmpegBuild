@@ -709,10 +709,14 @@ COMMON_FLAGS=(
     # Blu-ray LPCM below. DecoderAvailabilityTests refuses a half set from here on.
     --enable-decoder=wmav1 --enable-decoder=wmav2 --enable-decoder=wmapro
     --enable-decoder=wmalossless --enable-decoder=wmavoice
-    --enable-decoder=aac --enable-decoder=aac_latm --enable-decoder=ac3
-    --enable-decoder=eac3 --enable-decoder=flac --enable-decoder=mp3
+    # mkolakowski fork (MK Plus): no Dolby or DTS decoders. AC-3 and E-AC-3 are
+    # decoded by Apple's AudioToolbox in the app; TrueHD, MLP and DTS aren't
+    # decoded at all. Their demuxers, parsers and the dca_core filter stay, so
+    # those tracks are still found, framed and listed.
+    --enable-decoder=aac --enable-decoder=aac_latm
+    --enable-decoder=flac --enable-decoder=mp3
     --enable-decoder=mp3float --enable-decoder=opus --enable-decoder=vorbis
-    --enable-decoder=truehd --enable-decoder=mlp --enable-decoder=dca --enable-decoder=alac
+    --enable-decoder=alac
     --enable-decoder=pcm_s16le --enable-decoder=pcm_s24le --enable-decoder=pcm_f32le
     # Flash Video audio, the whole tail, all-or-nothing for the same reason the WMA
     # family above is: a decoder missing here is a file that plays as a silent film
@@ -792,7 +796,8 @@ COMMON_FLAGS=(
     # (~384 kbps for 5.1) versus the FLAC bridge's lossless, but
     # tvOS doesn't expose LPCM-side audio passthrough that the
     # lossless was actually delivering on most setups anyway.
-    --enable-encoder=eac3
+    # mkolakowski fork (MK Plus): no E-AC-3 encoder either (no Dolby code of
+    # its own); the app has no audio bridge that re-encodes.
 )
 
 build_one() {

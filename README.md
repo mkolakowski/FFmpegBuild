@@ -1,3 +1,11 @@
+> [!NOTE]
+> **This is MK Plus's fork** of [superuser404notfound/FFmpegBuild](https://github.com/superuser404notfound/FFmpegBuild), LGPL-2.1 like the original.
+> One change, in `build.sh`: FFmpeg is built **without the Dolby and DTS decoders** (`ac3`, `eac3`, `truehd`, `mlp`, `dca`)
+> **and without the E-AC-3 encoder**. Their demuxers, parsers and the `dca_core` filter stay, so those tracks are still found and listed;
+> MK Plus decodes Dolby Digital and Dolby Digital Plus with Apple's AudioToolbox instead. Tags are upstream's version plus `-mkN`
+> (`3.5.0-mk1` is upstream 3.5.0 with this change). `Tests/FFmpegBuildTests/NoDolbyOrDTSTests.swift` checks the built frameworks.
+> Upstream releases are merged in by hand.
+
 <h1 align="center">FFmpegBuild</h1>
 
 <p align="center">
@@ -42,7 +50,7 @@ Full FFmpeg builds for iOS land at 40-70 MB because they bundle a TLS stack, enc
 Anything the app layer should already handle or doesn't need:
 
 - Network / TLS: FFmpeg reads from an `avio_alloc_context` callback, you wire `URLSession` to it
-- Encoders, except FLAC and EAC3 (kept for the audio bridge that re-encodes non-streamable sources like TrueHD / DTS / DTS-HD MA. FLAC for the lossless 7.1 path, EAC3 5.1 for the default soundbar-compat path that surfaces surround via HDMI bitstream tunnel)
+- Encoders, except FLAC (this fork also leaves out upstream's EAC3 encoder)
 - Muxers, except MP4 / MOV / HLS (kept for the HLS-fMP4 producer that wraps streams for AVPlayer)
 - libavdevice (libavfilter is included but trimmed to a handful of filters, see In)
 - Most filters: libavfilter ships only buffer / buffersink / format / scale / zscale / tonemap / colorspace / bwdif / yadif / yadif_videotoolbox / hwupload
@@ -101,7 +109,7 @@ What the rename does **not** change is the C symbols: `_avcodec_open2` is still 
 
 - **Video (hardware via VideoToolbox)**: H.264, HEVC up to Main10 (HDR10 / DV Profile 8)
 - **Video (software)**: AV1 (dav1d), VP9, VP8, MPEG-2, MPEG-4, VC-1, QuickTime RLE (qtrle), and the legacy Microsoft tail: MS-MPEG4 v1 / v2 / v3 (DivX 3.x in pre-2005 AVI rips), WMV1 / WMV2, WMV3 (WMV9). A native `.wmv` / `.asf` plays whole: the `asf` demuxer and every WMA decoder ship with it, because a decoder left out is a file with silent audio (the consumer's bridge finds no decoder for the id and the session falls to video-only). The Flash tail is here for the same reason: FLV1 (Sorenson Spark) and On2 VP6 / VP6F / VP6A with the era's audio, so a legacy `.flv` plays whole where before only H.264-in-FLV did. Flash Screen Video stays out, it needs zlib
-- **Audio**: AAC, AC3, EAC3 (incl. JOC detection for Atmos), FLAC, MP2, MP3, Opus, Vorbis, TrueHD, MLP, DTS, ALAC, PCM (incl. Blu-ray LPCM via `pcm_bluray`, G.711 A-law / mu-law, big-endian and unsigned 8-bit), WMA Standard / Pro / Lossless / Voice, Nellymoser Asao, ADPCM-SWF, Speex
+- **Audio**: AAC, FLAC, MP2, MP3, Opus, Vorbis, ALAC (this fork: no AC3, EAC3, TrueHD, MLP or DTS decoders), PCM (incl. Blu-ray LPCM via `pcm_bluray`, G.711 A-law / mu-law, big-endian and unsigned 8-bit), WMA Standard / Pro / Lossless / Voice, Nellymoser Asao, ADPCM-SWF, Speex
 - **Subtitles**: SRT, ASS, SSA, WebVTT, PGS, DVB subtitle, DVB teletext (via libzvbi), DVD
 
 HDR metadata (BT.2020, SMPTE ST 2084 / PQ, HLG, DV RPU) is preserved end-to-end so the decode pipeline can tag frames correctly.
