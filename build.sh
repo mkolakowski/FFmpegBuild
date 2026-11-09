@@ -686,12 +686,15 @@ COMMON_FLAGS=(
     --enable-decoder=pcm_s16le --enable-decoder=pcm_s24le --enable-decoder=pcm_f32le
     # Flash Video audio, the whole tail, all-or-nothing for the same reason the WMA
     # family above is: a decoder missing here is a file that plays as a silent film
-    # rather than failing honestly, because the bridge has nothing to open. Nellymoser Asao and ADPCM-SWF are what the
+    # rather than failing honestly, because the bridge has nothing to open. ADPCM-SWF is what the
     # Flash era recorded, speex is its voice codec (native decoder, no libspeex),
     # and FLV's PCM shapes are big-endian S16, unsigned 8-bit and G.711 A-law /
     # mu-law, none of which the little-endian line above carries. None is fMP4-legal,
     # so every one of them goes through AudioBridge. Tens of KB between them.
-    --enable-decoder=nellymoser --enable-decoder=adpcm_swf --enable-decoder=speex
+    # mkolakowski fork, 3.5.0-mk3: no Nellymoser Asao decoder (a proprietary codec
+    # whose patent status couldn't be confirmed); MK Plus refuses those tracks and
+    # names them instead of playing a silent film.
+    --enable-decoder=adpcm_swf --enable-decoder=speex
     --enable-decoder=pcm_s16be --enable-decoder=pcm_u8
     --enable-decoder=pcm_alaw --enable-decoder=pcm_mulaw
     # Blu-ray LPCM (PCM_BLURAY): M2TS audio tracks that ship raw LPCM. Not

@@ -127,7 +127,8 @@ struct DecoderAvailabilityTests {
             #expect(avcodec_find_decoder_by_name(name) == nil, "\(name) is back")
         }
         // Audio, every shape the container can carry, since each one left out is a silent film.
-        for name in ["nellymoser", "adpcm_swf", "speex", "pcm_s16be", "pcm_u8", "pcm_alaw", "pcm_mulaw"] {
+        // Nellymoser is out in this fork (3.5.0-mk3, NoPatentedDecodersTests); the app refuses it by name.
+        for name in ["adpcm_swf", "speex", "pcm_s16be", "pcm_u8", "pcm_alaw", "pcm_mulaw"] {
             #expect(
                 avcodec_find_decoder_by_name(name) != nil,
                 "\(name) missing: files carrying it would play with silent audio"

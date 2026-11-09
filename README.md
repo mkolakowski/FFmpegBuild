@@ -5,6 +5,7 @@
 > - `3.5.0-mk2`: also no **H.264, HEVC, MPEG-4 Part 2** (`mpeg4`, `msmpeg4v1`–`v3`), **VC-1/WMV** (`vc1`, `wmv1`–`wmv3`),
 >   **Flash-era video** (`flv`, `vp6`, `vp6a`, `vp6f`), **AAC** (`aac`, `aac_latm`) or **WMA** (`wmav1`, `wmav2`, `wmapro`,
 >   `wmalossless`, `wmavoice`) decoders.
+> - `3.5.0-mk3`: also no **Nellymoser Asao** (`nellymoser`) decoder, a Flash-era audio codec whose patent status couldn't be confirmed.
 >
 > Their demuxers and parsers stay, so those streams are still found, framed and named. MK Plus decodes H.264 and HEVC with
 > Apple's VideoToolbox and AAC, Dolby Digital and Dolby Digital Plus with AudioToolbox, and doesn't play the rest. Tags are

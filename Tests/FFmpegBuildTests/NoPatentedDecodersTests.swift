@@ -16,8 +16,8 @@ struct NoPatentedDecodersTests {
         #expect(avcodec_find_decoder_by_name(name) == nil, "\(name) has a decoder")
     }
 
-    @Test("no AAC, AAC-LATM or WMA decoder", arguments: [
-        "aac", "aac_fixed", "aac_latm", "wmav1", "wmav2", "wmapro", "wmalossless", "wmavoice",
+    @Test("no AAC, AAC-LATM, WMA or Nellymoser decoder", arguments: [
+        "aac", "aac_fixed", "aac_latm", "wmav1", "wmav2", "wmapro", "wmalossless", "wmavoice", "nellymoser",
     ])
     func audioDecoderIsAbsent(_ name: String) {
         #expect(avcodec_find_decoder_by_name(name) == nil, "\(name) has a decoder")
