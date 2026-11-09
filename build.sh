@@ -652,68 +652,34 @@ COMMON_FLAGS=(
     # cover H.264/HEVC-in-PS; these add MPEG-2 (DVD) and MPEG-4 Part 2.
     --enable-demuxer=mpegvideo --enable-demuxer=m4v
     --disable-decoders
-    --enable-decoder=h264 --enable-decoder=hevc --enable-decoder=vp8
+    # mkolakowski fork (MK Plus), 3.5.0-mk2: no H.264, HEVC, MPEG-4 Part 2 or VC-1
+    # decoders. The app hands H.264 and HEVC to Apple's VideoToolbox directly and
+    # doesn't play the others (patent-encumbered formats: MK Plus's
+    # Plans/patent-safe-video.md). Their demuxers and parsers stay, so those streams
+    # are still found, framed and named, and the app can say why it won't play them.
+    # Their VideoToolbox hwaccels go too: --enable-videotoolbox switches every one on,
+    # and each one selects its decoder (h264_videotoolbox_hwaccel_select="h264_decoder"),
+    # which would bring the decoders back in.
+    --disable-hwaccel=h263_videotoolbox --disable-hwaccel=h264_videotoolbox
+    --disable-hwaccel=hevc_videotoolbox --disable-hwaccel=mpeg4_videotoolbox
+    --enable-decoder=vp8
     --enable-decoder=vp9 --enable-decoder=av1 --enable-decoder=libdav1d
-    --enable-decoder=mpeg2video --enable-decoder=mpeg4 --enable-decoder=vc1
+    --enable-decoder=mpeg2video
     --enable-decoder=qtrle
-    # Legacy Microsoft video, the MPEG-4-family tail that pre-2005 AVI rips and
-    # WMV-era remuxes still carry (FFmpegBuild#3). All are native libavcodec
-    # decoders under FFmpeg's LGPL-2.1-or-later terms: no external library, no GPL
-    # flag. msmpeg4v1/v2/v3 and wmv1/wmv2 share the msmpeg4dec object, so once v3
-    # (MS-MPEG4 v3 / "DivX 3.11", the reported case) is in, its siblings cost their
-    # decoder structs plus wmv2dsp; wmv3 (WMV9) selects the already-enabled
-    # vc1_decoder and adds little beyond its own registration. Without them
-    # avcodec_find_decoder returns nil and AetherEngine's software path fails the
-    # load with unsupportedCodec, because since FFmpegBuild#1 the routing default is
-    # software for everything the native path does not carry. The avi demuxer above
-    # is already enabled, so the AVI case is complete with the decoder alone.
-    --enable-decoder=msmpeg4v1 --enable-decoder=msmpeg4v2 --enable-decoder=msmpeg4v3
-    --enable-decoder=wmv1 --enable-decoder=wmv2 --enable-decoder=wmv3
-    # Flash Video, the legacy half. The flv DEMUXER has been on the list above since
-    # the beginning, so a modern .flv (H.264 + AAC, everything after 2008) already
-    # direct-plays; what was missing is the decoder tail of the Flash era. FLV1 is
-    # Sorenson Spark, the H.263 variant of every pre-2008 file, and it shares the
-    # h263 / mpeg4 objects already compiled in; vp6 / vp6a / vp6f are the On2 family
-    # Flash 8 brought and pay for the vp56 core once. Note the registered name: the
-    # FLV1 decoder answers to `flv`, which is also what configure wants here, so a
-    # consumer asking for `flv1` by name finds nothing (AetherEngine dispatches by
-    # id and does not care).
-    #
-    # Flash Screen Video (flashsv / flashsv2) is deliberately out: it needs zlib,
-    # which --disable-autodetect above switches off, so the flag would be dropped
-    # without a word, exactly like the dash demuxer. Screen recordings are also not
-    # what a film library holds. Enabling it means --enable-zlib and counting the
-    # generated decoder list afterwards, not adding a flag.
-    --enable-decoder=flv --enable-decoder=vp6 --enable-decoder=vp6a --enable-decoder=vp6f
-    # Windows Media audio, the whole family, which is what makes the native .wmv /
-    # .asf case complete: demuxer above, video decoders on the line above this one,
-    # sound here. #3 closed the other way in August 2026 on the reporter's answer
-    # that their library holds WMV only inside Matroska and MPEG-TS; a second field
-    # report in September 2026 said the native form does turn up, so the boundary
-    # moved rather than the argument.
-    #
-    # All five, not the two a .wmv usually carries, because this chain is
-    # all-or-nothing by construction. A decoder left out here is a file that plays
-    # SILENTLY: AetherEngine's audio bridge asks libavcodec for a decoder by id, that
-    # lookup returns nothing, and the session falls to video-only, which reads as a
-    # playback bug where an honest unsupported-format error would not. Measured
-    # 2026-09-10 with a codec this build omits: `AudioBridge: no FFmpeg decoder for
-    # source codec id 69633 ... falling back to SILENT video-only`. Note the level:
-    # the host's routing table is NOT what decides this, a codec it does not name
-    # still plays as long as the decoder is here, so the promise is made in this
-    # file and nowhere else. wmav1 / wmav2 are WMA
-    # Standard, wmapro is WMA 9/10 Pro and the usual audio of anything post-2003,
-    # wmalossless and wmavoice are rare in film content and cost tens of KB between
-    # them, which is less than one silent-audio report costs. WMA is not fMP4-legal,
-    # so AetherEngine's AudioBridge decodes and re-encodes it, same as MP2 and
-    # Blu-ray LPCM below. DecoderAvailabilityTests refuses a half set from here on.
-    --enable-decoder=wmav1 --enable-decoder=wmav2 --enable-decoder=wmapro
-    --enable-decoder=wmalossless --enable-decoder=wmavoice
-    # mkolakowski fork (MK Plus): no Dolby or DTS decoders. AC-3 and E-AC-3 are
-    # decoded by Apple's AudioToolbox in the app; TrueHD, MLP and DTS aren't
-    # decoded at all. Their demuxers, parsers and the dca_core filter stay, so
-    # those tracks are still found, framed and listed.
-    --enable-decoder=aac --enable-decoder=aac_latm
+    # Legacy Microsoft video (MS-MPEG4 v1-v3, WMV1-3): upstream enables it on
+    # FFmpegBuild#3. mkolakowski fork, 3.5.0-mk2: left out with MPEG-4 Part 2 and
+    # VC-1 (see above); the avi and asf demuxers stay.
+    # Flash Video's legacy video (FLV1 / Sorenson Spark, On2 VP6): upstream enables
+    # it in 3.2.0. mkolakowski fork, 3.5.0-mk2: left out (FLV1 is an H.263 variant,
+    # in the MPEG-4 family). The flv demuxer stays, so H.264-in-FLV is still read.
+    # Windows Media audio (wmav1, wmav2, wmapro, wmalossless, wmavoice): upstream ships
+    # the whole family with the native .wmv chain. mkolakowski fork, 3.5.0-mk2: left
+    # out, all of it; the app lists such tracks as not supported and plays another.
+    # mkolakowski fork (MK Plus): no Dolby or DTS decoders (3.5.0-mk1), and no AAC
+    # or AAC-LATM decoders (3.5.0-mk2). AC-3, E-AC-3 and AAC are decoded by Apple's
+    # AudioToolbox in the app; TrueHD, MLP, DTS and AAC-LATM aren't decoded at all.
+    # Their demuxers, parsers and the dca_core filter stay, so those tracks are
+    # still found, framed and listed.
     --enable-decoder=flac --enable-decoder=mp3
     --enable-decoder=mp3float --enable-decoder=opus --enable-decoder=vorbis
     --enable-decoder=alac

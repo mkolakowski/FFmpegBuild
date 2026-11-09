@@ -1,10 +1,16 @@
 > [!NOTE]
 > **This is MK Plus's fork** of [superuser404notfound/FFmpegBuild](https://github.com/superuser404notfound/FFmpegBuild), LGPL-2.1 like the original.
-> One change, in `build.sh`: FFmpeg is built **without the Dolby and DTS decoders** (`ac3`, `eac3`, `truehd`, `mlp`, `dca`)
-> **and without the E-AC-3 encoder**. Their demuxers, parsers and the `dca_core` filter stay, so those tracks are still found and listed;
-> MK Plus decodes Dolby Digital and Dolby Digital Plus with Apple's AudioToolbox instead. Tags are upstream's version plus `-mkN`
-> (`3.5.0-mk1` is upstream 3.5.0 with this change). `Tests/FFmpegBuildTests/NoDolbyOrDTSTests.swift` checks the built frameworks.
-> Upstream releases are merged in by hand.
+> One kind of change, in `build.sh`: FFmpeg is built **without decoders for patent-encumbered formats**.
+> - `3.5.0-mk1`: no Dolby or DTS decoders (`ac3`, `eac3`, `truehd`, `mlp`, `dca`) and no E-AC-3 encoder.
+> - `3.5.0-mk2`: also no **H.264, HEVC, MPEG-4 Part 2** (`mpeg4`, `msmpeg4v1`–`v3`), **VC-1/WMV** (`vc1`, `wmv1`–`wmv3`),
+>   **Flash-era video** (`flv`, `vp6`, `vp6a`, `vp6f`), **AAC** (`aac`, `aac_latm`) or **WMA** (`wmav1`, `wmav2`, `wmapro`,
+>   `wmalossless`, `wmavoice`) decoders.
+>
+> Their demuxers and parsers stay, so those streams are still found, framed and named. MK Plus decodes H.264 and HEVC with
+> Apple's VideoToolbox and AAC, Dolby Digital and Dolby Digital Plus with AudioToolbox, and doesn't play the rest. Tags are
+> upstream's version plus `-mkN`. `Tests/FFmpegBuildTests/NoPatentedDecodersTests.swift` and `NoDolbyOrDTSTests.swift` check
+> the built frameworks. Upstream releases are merged in by hand. The upstream text below describes upstream's build, not
+> this fork's decoder list.
 
 <h1 align="center">FFmpegBuild</h1>
 

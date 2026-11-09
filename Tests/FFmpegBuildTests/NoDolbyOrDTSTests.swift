@@ -27,7 +27,7 @@ struct NoDolbyOrDTSTests {
     }
 
     @Test("the other audio decoders stay", arguments: [
-        AV_CODEC_ID_AAC, AV_CODEC_ID_FLAC, AV_CODEC_ID_OPUS, AV_CODEC_ID_MP3, AV_CODEC_ID_VORBIS, AV_CODEC_ID_ALAC,
+        AV_CODEC_ID_FLAC, AV_CODEC_ID_OPUS, AV_CODEC_ID_MP3, AV_CODEC_ID_VORBIS, AV_CODEC_ID_ALAC, // AAC: out since 3.5.0-mk2
     ])
     func decoderIsPresent(_ id: AVCodecID) {
         #expect(avcodec_find_decoder(id) != nil, "\(String(cString: avcodec_get_name(id))) has no decoder")

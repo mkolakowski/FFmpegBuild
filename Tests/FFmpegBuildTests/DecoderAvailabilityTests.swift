@@ -87,46 +87,24 @@ struct DecoderAvailabilityTests {
         // FFmpegBuild#1: QuickTime RLE, the case that also moved the routing
         // default to software for everything the native path does not carry.
         #expect(avcodec_find_decoder_by_name("qtrle") != nil)
-        // FFmpegBuild#3: the legacy Microsoft MPEG-4 family. msmpeg4v3 and wmv3
-        // are both field-verified by the reporter, in AVI and in Matroska.
-        for name in ["msmpeg4v1", "msmpeg4v2", "msmpeg4v3", "wmv1", "wmv2", "wmv3"] {
-            let registered = Self.registeredName[name] ?? name
-            #expect(avcodec_find_decoder_by_name(registered) != nil, "\(name) went missing")
+        // FFmpegBuild#3 added the legacy Microsoft MPEG-4 family; the mkolakowski fork
+        // (3.5.0-mk2) leaves it out on purpose, see `NoPatentedDecodersTests`.
+    }
+
+    /// The native `.wmv` chain is all-in or all-out (FFmpegBuild#3). Upstream ships it whole;
+    /// the mkolakowski fork (3.5.0-mk2) leaves all of it out except the asf demuxer, so a `.wmv`
+    /// still opens and MK Plus can say what it is instead of playing it silently or not at all.
+    @Test("the native .wmv chain is out, all of it, the demuxer kept")
+    func theNativeWmvChainIsOut() {
+        #expect(av_find_input_format("asf") != nil, "asf demuxer missing: a .wmv couldn't even be named")
+        for name in ["wmav1", "wmav2", "wmapro", "wmalossless", "wmavoice", "wmv1", "wmv2", "wmv3", "vc1"] {
+            #expect(avcodec_find_decoder_by_name(name) == nil, "\(name) is back")
         }
     }
 
-    /// The native `.wmv` chain is all-in or all-out (FFmpegBuild#3), and since
-    /// September 2026 it is in.
-    ///
-    /// Such a file needs three things at once: the asf demuxer to open it, a video
-    /// decoder, and a decoder for whichever WMA flavour its audio track carries. With
-    /// the demuxer but without that last one, AetherEngine's `AudioCodecCompat` maps
-    /// the unrecognised id to `.unsupported` and the session drops to video-only, so
-    /// the file plays silently, which reads as a playback bug where an honest
-    /// `unsupportedCodec` would not. Every name missing below is one such file, which
-    /// is why the whole family ships and why this test lists each one instead of
-    /// trusting the configure line.
-    @Test("the native .wmv chain is whole")
-    func theNativeWmvChainIsWhole() {
-        #expect(
-            av_find_input_format("asf") != nil,
-            "asf demuxer missing: a native .wmv cannot be opened at all"
-        )
-        for name in ["wmav1", "wmav2", "wmapro", "wmalossless", "wmavoice"] {
-            #expect(
-                avcodec_find_decoder_by_name(name) != nil,
-                "\(name) missing: files carrying it would play with silent audio"
-            )
-        }
-        // The video half belongs in the same statement, so a failure reads as one fact
-        // about the format rather than sending the reader to another suite to find out
-        // why sound alone was not enough. vc1 is what WVC1, the modern .wmv, carries.
-        for name in ["wmv1", "wmv2", "wmv3", "vc1"] {
-            #expect(avcodec_find_decoder_by_name(name) != nil, "\(name) missing")
-        }
-    }
-
-    /// The native `.flv` chain, whole since 3.2.0, and whole for the same reason.
+    /// The native `.flv` chain: upstream's is whole since 3.2.0. The mkolakowski fork (3.5.0-mk2)
+    /// leaves the legacy video out (FLV1 is an H.263 variant; VP6 goes with it) and keeps the audio,
+    /// which H.264-in-FLV files still carry.
     ///
     /// The container is the part that was never missing: the `flv` demuxer has been on the list
     /// since the first build, so a Flash file from after 2008 (H.264 + AAC) always played and only
@@ -138,16 +116,15 @@ struct DecoderAvailabilityTests {
     /// Flash Screen Video is deliberately not in this list. It needs zlib, which
     /// `--disable-autodetect` switches off, so asking for it would only produce the silent
     /// no-op the dash demuxer once was.
-    @Test("the native .flv chain is whole")
-    func theNativeFlvChainIsWhole() {
+    @Test("the native .flv chain keeps its audio, not its legacy video")
+    func theNativeFlvChainKeepsItsAudio() {
         #expect(
             av_find_input_format("flv") != nil,
             "flv demuxer missing: no Flash file opens at all"
         )
-        // Video. `flv` IS the FLV1 decoder: it registers under the family name, so this is the
-        // spelling a consumer has to ask for, and `flv1` resolves to nothing.
+        // Video. `flv` IS the FLV1 decoder: it registers under the family name. Out in this fork.
         for name in ["flv", "vp6", "vp6a", "vp6f"] {
-            #expect(avcodec_find_decoder_by_name(name) != nil, "\(name) missing: those files fail the load")
+            #expect(avcodec_find_decoder_by_name(name) == nil, "\(name) is back")
         }
         // Audio, every shape the container can carry, since each one left out is a silent film.
         for name in ["nellymoser", "adpcm_swf", "speex", "pcm_s16be", "pcm_u8", "pcm_alaw", "pcm_mulaw"] {

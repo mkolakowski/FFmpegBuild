@@ -125,11 +125,14 @@ struct VC1ParserExtradataTests {
     /// Parses one buffer with a freshly initialised parser, the state every seek produces,
     /// and reports the picture size the parser settled on.
     private func parseLanding(bucketFullness: Int) -> (width: Int32, height: Int32) {
-        guard let codec = avcodec_find_decoder(AV_CODEC_ID_VC1),
-              let ctx = avcodec_alloc_context3(codec) else {
-            Issue.record("vc1 decoder unavailable")
+        // No decoder needed (and the mkolakowski fork has none since 3.5.0-mk2): a bare
+        // context tagged VC-1 is all the parser reads.
+        guard let ctx = avcodec_alloc_context3(nil) else {
+            Issue.record("no codec context")
             return (0, 0)
         }
+        ctx.pointee.codec_type = AVMEDIA_TYPE_VIDEO
+        ctx.pointee.codec_id = AV_CODEC_ID_VC1
         defer {
             var freed: UnsafeMutablePointer<AVCodecContext>? = ctx
             avcodec_free_context(&freed)
@@ -188,12 +191,13 @@ struct VC1ParserExtradataTests {
 
     @Test("a landing that repeats the sequence header resolves too (fixture control)")
     func landingWithSequenceHeaderControl() {
-        guard let codec = avcodec_find_decoder(AV_CODEC_ID_VC1),
-              let ctx = avcodec_alloc_context3(codec),
+        guard let ctx = avcodec_alloc_context3(nil),
               let parser = av_parser_init(Int32(AV_CODEC_ID_VC1.rawValue)) else {
-            Issue.record("vc1 parser or decoder unavailable")
+            Issue.record("vc1 parser unavailable")
             return
         }
+        ctx.pointee.codec_type = AVMEDIA_TYPE_VIDEO
+        ctx.pointee.codec_id = AV_CODEC_ID_VC1
         defer {
             av_parser_close(parser)
             var freed: UnsafeMutablePointer<AVCodecContext>? = ctx
